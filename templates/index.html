@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YT Simple Downloader</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-900 text-white min-h-screen flex items-center justify-center p-4">
+
+    <div class="max-w-md w-full bg-slate-800 rounded-3xl p-8 border border-slate-700 shadow-2xl">
+        <h1 class="text-2xl font-bold text-center mb-6">Simple <span class="text-blue-500">Downloader</span></h1>
+
+        <div id="ui-input" class="space-y-4">
+            <input type="text" id="url" placeholder="YouTubeのURLを貼り付け" 
+                class="w-full bg-slate-900 border border-slate-700 p-4 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-center">
+            <button onclick="startDownload()" id="dl-btn" class="w-full bg-blue-600 hover:bg-blue-500 py-4 rounded-xl font-bold transition-all shadow-lg active:scale-95">
+                MP4をダウンロード
+            </button>
+        </div>
+
+        <div id="ui-loading" class="hidden text-center py-10 space-y-4">
+            <div class="animate-spin inline-block w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full"></div>
+            <p class="text-slate-400 animate-pulse text-sm">サーバーで動画を準備中...<br><span class="text-[10px]">完了すると自動で保存されます</span></p>
+        </div>
+
+        <div id="ui-success" class="hidden text-center py-6 space-y-4">
+            <div class="text-green-500 text-4xl">✓</div>
+            <p class="text-sm font-bold">保存を開始しました！</p>
+            <button onclick="location.reload()" class="text-xs text-slate-500 underline">別の動画を保存する</button>
+        </div>
+    </div>
+
+    <script>
+        async function startDownload() {
+            const urlInput = document.getElementById('url').value;
+            if(!urlInput) return alert("URLを入力してください");
+
+            document.getElementById('ui-input').classList.add('hidden');
+            document.getElementById('ui-loading').classList.remove('hidden');
+
+            try {
+                const response = await fetch('/download', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({url: urlInput})
+                });
+                
+                const data = await response.json();
+
+                if (data.success) {
+                    // 自動ダウンロード実行
+                    const a = document.createElement('a');
+                    a.href = data.file_path;
+                    a.download = data.file_name;
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+
+                    document.getElementById('ui-loading').classList.add('hidden');
+                    document.getElementById('ui-success').classList.remove('hidden');
+                } else {
+                    throw new Error(data.error);
+                }
+            } catch (e) {
+                alert("エラー: " + e.message);
+                location.reload();
+            }
+        }
+    </script>
+</body>
+</html>
